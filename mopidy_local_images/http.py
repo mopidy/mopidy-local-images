@@ -35,9 +35,9 @@ def factory(config, core):
         else:
             image_dir = Extension.get_or_create_data_dir(config)
     except Exception as e:
-        logger.error('Cannot start %s: %s', Extension.dist_name, e)
+        logger.error('Error starting %s: %s', Extension.dist_name, e)
         return []
-    logger.info('Starting %s for %s', Extension.dist_name, image_dir)
+    logger.info('Starting %s request handler', Extension.dist_name)
     return [
         (r'/(index.html)?', IndexHandler, {'root': image_dir}),
         (r'/(.+)', tornado.web.StaticFileHandler, {'path': image_dir})
