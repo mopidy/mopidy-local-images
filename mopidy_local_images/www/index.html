@@ -1,0 +1,22 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Mopidy-Local-Images</title>
+    <link rel="stylesheet" type="text/css" href="/mopidy/mopidy.css">
+    <style>
+       .thumbnail { width: 80px; height: 80px; }
+    </style>
+  </head>
+  <body>
+    <h1>Mopidy-Local-Images</h1>
+    <p>
+      This Web client is used to serve images extracted from local
+      media files by the Mopidy-Local-Images extension.
+    </p>
+    <div>
+      {% for image in images %}
+      <a href="{{ image }}"><img class="thumbnail" src="{{ image }}"></a>
+      {% end %}
+    </div>
+  </body>
+</html>

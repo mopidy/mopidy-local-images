@@ -1,0 +1,8 @@
+include CHANGES.rst
+include LICENSE
+include MANIFEST.in
+include README.rst
+include mopidy_local_images/ext.conf
+
+recursive-include mopidy_local_images/www *.html
+recursive-include tests *.py
