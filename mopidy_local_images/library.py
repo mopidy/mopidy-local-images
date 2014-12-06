@@ -56,7 +56,7 @@ class ImageLibrary(local.Library):
         return self.library.browse(uri)
 
     def search(self, query=None, limit=100, offset=0, uris=None, exact=False):
-        return self.library.search(self, query, limit, offset, uris, exact)
+        return self.library.search(query, limit, offset, uris, exact)
 
     def begin(self):
         return self.library.begin()
