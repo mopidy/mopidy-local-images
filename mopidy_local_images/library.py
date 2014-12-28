@@ -115,9 +115,10 @@ class ImageLibrary(local.Library):
     def scan(self, uri):
         logger.debug('Scanning %s for images', uri)
         data = self.scanner.scan(uri)
+        tags = data['tags']
         images = []
-        # Use image 'image' tag if available, or smaller, lower quality 'preview-image' otherwise
-        for image in data['tags'].get('image', []) or data['tags'].get('preview-image', []):
+        # use 'image' tag if available, smaller 'preview-image' otherwise
+        for image in tags.get('image', []) or tags.get('preview-image', []):
             try:
                 images.append(self.get_or_create_image_file(None, image.data))
             except Exception as e:
