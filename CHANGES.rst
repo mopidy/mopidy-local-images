@@ -1,3 +1,9 @@
+0.1.2 2014-12-28
+----------------
+
+- Use `preview-image` tag if `image` tag is not available.
+
+
 0.1.1 2014-12-06
 ----------------
 
