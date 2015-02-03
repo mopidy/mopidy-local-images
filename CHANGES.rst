@@ -1,3 +1,11 @@
+0.1.3 2015-02-03
+----------------
+
+- Remove link to `mopidy.css`.
+
+- Fix error when scanning external album art.
+
+
 0.1.2 2014-12-28
 ----------------
 
