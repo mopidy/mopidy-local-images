@@ -116,18 +116,18 @@ class ImageLibrary(local.Library):
         logger.debug('Scanning %s for images', uri)
         data = self.scanner.scan(uri)
         tags = data['tags']
-        images = []
+        images = set()  # filter duplicate URIs, e.g. internal/external
         # use 'image' tag if available, smaller 'preview-image' otherwise
         for image in tags.get('image', []) or tags.get('preview-image', []):
             try:
-                images.append(self.get_or_create_image_file(None, image.data))
+                images.add(self.get_or_create_image_file(None, image.data))
             except Exception as e:
                 logger.warn('Cannot extract images for %s: %s', uri, e)
         dirname = os.path.dirname(uri_to_path(uri))
         for pattern in self.patterns:
             for path in glob.glob(os.path.join(dirname, pattern)):
                 try:
-                    images.append(self.get_or_create_image(path))
+                    images.add(self.get_or_create_image_file(path))
                 except Exception as e:
                     logger.warn('Cannot read album art from %s: %s', path, e)
         return images
