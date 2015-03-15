@@ -49,11 +49,17 @@ class ImageLibrary(local.Library):
     def load(self):
         return self.library.load()
 
-    def lookup(self, uri):
-        return self.library.lookup(uri)
-
     def browse(self, uri):
         return self.library.browse(uri)
+
+    def get_distinct(self, field, query=None):
+        return self.library.get_distinct(field, query)
+
+    def get_images(self, uris):
+        return self.library.get_images(uris)
+
+    def lookup(self, uri):
+        return self.library.lookup(uri)
 
     def search(self, query=None, limit=100, offset=0, uris=None, exact=False):
         return self.library.search(query, limit, offset, uris, exact)
