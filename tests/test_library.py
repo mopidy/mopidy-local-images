@@ -76,10 +76,12 @@ class LocalLibraryProviderTest(unittest.TestCase):
         self.library.browse(b'local:directory')
         mock_library.browse.assert_called_with(b'local:directory')
 
+    @unittest.skipUnless(hasattr(mock_library, 'get_distinct'), 'Mopidy v0.20')
     def test_get_distinct(self):
         self.library.get_distinct('album')
         mock_library.get_distinct.assert_called_with('album', None)
 
+    @unittest.skipUnless(hasattr(mock_library, 'get_images'), 'Mopidy v0.20')
     def test_get_images(self):
         self.library.get_images([b'local:track:foo.mp3'])
         mock_library.get_images.assert_called_with([b'local:track:foo.mp3'])
