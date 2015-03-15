@@ -23,6 +23,8 @@ class ImageLibrary(local.Library):
 
     name = 'images'
 
+    add_supports_tags_and_duration = True
+
     libraries = []
 
     def __init__(self, config):
@@ -67,20 +69,19 @@ class ImageLibrary(local.Library):
     def begin(self):
         return self.library.begin()
 
-    def add(self, track):
-        # mopidy#838: tracks without albums cannot have images
-        if track.album and track.album.name:
+    def add(self, track, tags=None, duration=None):
+        if track.album and track.album.name:  # require existing album
             try:
                 uri = local_track_uri_to_file_uri(track.uri, self.media_dir)
-                images = self.scan(uri)
-                album = track.album.copy(images=images)  # TODO: append?
+                images = self._extract_images(uri, tags or self._scan(uri))
+                album = track.album.copy(images=images)
                 track = track.copy(album=album)
-                logger.debug('Adding %r', track)
             except Exception as e:
-                logger.warn('Error extracting images for %s: %s', track.uri, e)
+                logger.warn('Error extracting images for %s: %s', uri, e)
+        if getattr(self.library, 'add_supports_tags_and_duration', False):
+            self.library.add(track, tags, duration)
         else:
-            logger.debug('Skipping non-album track %s', track.uri)
-        self.library.add(track)
+            self.library.add(track)
 
     def remove(self, uri):
         self.library.remove(uri)
@@ -90,7 +91,7 @@ class ImageLibrary(local.Library):
 
     def close(self):
         self.library.close()
-        self.cleanup()
+        self._cleanup()
 
     def clear(self):
         try:
@@ -103,7 +104,7 @@ class ImageLibrary(local.Library):
             logger.warn('Error clearing image directory: %s', e)
         return self.library.clear()
 
-    def cleanup(self):
+    def _cleanup(self):
         logger.info('Cleaning up image directory')
         uris = set()
         for track in self.library.begin():
@@ -118,27 +119,26 @@ class ImageLibrary(local.Library):
                     logger.info('Deleting file %s', path)
                     os.remove(path)
 
-    def scan(self, uri):
-        logger.debug('Scanning %s for images', uri)
-        data = self.scanner.scan(uri)
-        tags = data['tags']
+    def _extract_images(self, uri, tags):
+        path = uri_to_path(uri)
+        dirname = os.path.dirname(path)
         images = set()  # filter duplicate URIs, e.g. internal/external
-        # use 'image' tag if available, smaller 'preview-image' otherwise
-        for image in tags.get('image', []) or tags.get('preview-image', []):
+        for image in tags.get('image', tags.get('preview-image', [])):
             try:
-                images.add(self.get_or_create_image_file(None, image.data))
+                # support both gst.Buffer and plain str/bytes type
+                data = getattr(image, 'data', image)
+                images.add(self._get_or_create_image_file(path, data))
             except Exception as e:
-                logger.warn('Cannot extract images for %s: %s', uri, e)
-        dirname = os.path.dirname(uri_to_path(uri))
+                logger.warn('Error extracting images: %r', e)
         for pattern in self.patterns:
-            for path in glob.glob(os.path.join(dirname, pattern)):
+            for imgpath in glob.glob(os.path.join(dirname, pattern)):
                 try:
-                    images.add(self.get_or_create_image_file(path))
+                    images.add(self._get_or_create_image_file(imgpath))
                 except Exception as e:
-                    logger.warn('Cannot read album art from %s: %s', path, e)
+                    logger.warn('Cannot read image %s: %s', imgpath, e)
         return images
 
-    def get_or_create_image_file(self, path, data=None):
+    def _get_or_create_image_file(self, path, data=None):
         what = imghdr.what(path, data)
         if not what:
             raise ValueError('Unknown image type')
@@ -148,3 +148,8 @@ class ImageLibrary(local.Library):
         path = os.path.join(self.image_dir, name)
         get_or_create_file(str(path), True, data)
         return uritools.urijoin(self.base_uri, name)
+
+    def _scan(self, uri):
+        logger.debug('Scanning %s for images', uri)
+        data = self.scanner.scan(uri)
+        return data['tags']

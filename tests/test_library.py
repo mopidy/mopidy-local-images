@@ -1,5 +1,7 @@
 from __future__ import unicode_literals
 
+import hashlib
+import os
 import shutil
 import tempfile
 import unittest
@@ -7,8 +9,13 @@ import unittest
 import mock
 
 from mopidy import local
-from mopidy.models import Track
+from mopidy.audio import scan
+from mopidy.models import Album, Track
 from mopidy_local_images import library
+
+GIF_DATA = """
+R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs='
+""".decode('base64')
 
 # setup mock local library
 mock_library = mock.MagicMock(local.Library)
@@ -28,7 +35,7 @@ class LocalLibraryProviderTest(unittest.TestCase):
             },
             'local-images': {
                 'library': 'mock',
-                'base_uri': None,
+                'base_uri': '/images/',
                 'image_dir': self.tempdir,
                 'album_art_files': []
             }
@@ -37,32 +44,67 @@ class LocalLibraryProviderTest(unittest.TestCase):
     def tearDown(self):
         shutil.rmtree(self.tempdir)
 
-    def test_add_no_album(self):
-        track = Track(name='Foo', uri='local:track:foo')
+    def test_add(self):
+        track = Track(name='Foo', uri=b'local:track:foo.mp3')
+
+        mock_library.add_supports_tags_and_duration = False
         self.library.add(track)
         mock_library.add.assert_called_with(track)
+
+        mock_library.add_supports_tags_and_duration = True
+        self.library.add(track)
+        mock_library.add.assert_called_with(track, None, None)
+
+    def test_add_with_tags_and_duration(self):
+        track = Track(name='Foo', uri=b'local:track:foo.mp3')
+
+        self.assertTrue(self.library.add_supports_tags_and_duration)
+
+        mock_library.add_supports_tags_and_duration = False
+        self.library.add(track, {'tag': 'bar'}, 0)
+        mock_library.add.assert_called_with(track)
+
+        mock_library.add_supports_tags_and_duration = True
+        self.library.add(track, {'tag': 'bar'}, 0)
+        mock_library.add.assert_called_with(track, {'tag': 'bar'}, 0)
 
     def test_load(self):
         self.library.load()
         mock_library.load.assert_called_with()
 
     def test_browse(self):
-        self.library.browse('uri')
-        mock_library.browse.assert_called_with('uri')
+        self.library.browse(b'local:directory')
+        mock_library.browse.assert_called_with(b'local:directory')
 
     def test_get_distinct(self):
-        self.library.get_distinct('field')
-        mock_library.get_distinct.assert_called_with('field', None)
+        self.library.get_distinct('album')
+        mock_library.get_distinct.assert_called_with('album', None)
 
     def test_get_images(self):
-        self.library.get_images(['uri'])
-        mock_library.get_images.assert_called_with(['uri'])
+        self.library.get_images([b'local:track:foo.mp3'])
+        mock_library.get_images.assert_called_with([b'local:track:foo.mp3'])
         pass
 
     def test_lookup(self):
-        self.library.lookup('uri')
-        mock_library.lookup.assert_called_with('uri')
+        self.library.lookup(b'local:track:foo.mp3')
+        mock_library.lookup.assert_called_with(b'local:track:foo.mp3')
 
     def test_search(self):
         self.library.search({})
         mock_library.search.assert_called_with({}, 100, 0, None, False)
+
+    @mock.patch.object(scan.Scanner, 'scan')
+    def test_scan(self, mock_scan):
+        album = Album(name='foo')
+        track = Track(uri=b'local:track:foo.mp3', album=album)
+        path = hashlib.md5(GIF_DATA).hexdigest() + '.gif'
+        image_track = track.copy(album=album.copy(images=['/images/' + path]))
+
+        mock_scan.return_value = {'tags': {'image': [GIF_DATA]}}
+
+        self.library.add(track)
+        mock_library.add.assert_called_with(image_track, None, None)
+        self.assertTrue(os.path.isfile(os.path.join(self.tempdir, path)))
+
+        self.library.close()
+        self.assertFalse(os.path.isfile(os.path.join(self.tempdir, path)))
