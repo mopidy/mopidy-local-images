@@ -1,3 +1,12 @@
+0.2.0 2015-03-15
+----------------
+
+- Support local library methods added with Mopidy v0.20.
+
+- Avoid scanning each track twice by using the tags passed to
+  ``Library.add`` with Mopidy v0.20.
+
+
 0.1.3 2015-02-03
 ----------------
 

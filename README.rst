@@ -110,9 +110,10 @@ Licensed under the `Apache License, Version 2.0`_.
 Known Bugs and Limitations
 ------------------------------------------------------------------------
 
-Using this extension will slow down ``mopidy local scan``
-considerably, since every media file added has to be scanned twice.
-This is a limitation of the Mopidy local library provider interface.
+With Mopidy v0.19, using this extension will slow down ``mopidy local
+scan`` considerably, since every new media file has to be scanned
+twice.  This was a limitation of the Mopidy local library provider
+interface, which has been improved in Mopidy v0.20.
 
 
 .. _Mopidy: http://www.mopidy.com/
