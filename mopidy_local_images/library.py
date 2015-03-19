@@ -6,6 +6,8 @@ import imghdr
 import logging
 import os
 import os.path
+import re
+import struct
 import uritools
 
 from mopidy import local
@@ -19,6 +21,33 @@ from . import Extension
 logger = logging.getLogger(__name__)
 
 
+# would be nice to have these in imghdr...
+def get_image_size_png(data):
+    return struct.unpack(str('>ii'), data[16:24])
+
+
+def get_image_size_gif(data):
+    return struct.unpack(str('<HH'), data[6:10])
+
+
+def get_image_size_jpeg(data):
+    # original source: http://goo.gl/6bo5Vx
+    index = 0
+    ftype = 0
+    size = 2
+    while not 0xc0 <= ftype <= 0xcf:
+        index += size
+        ftype = ord(data[index])
+        while ftype == 0xff:
+            index += 1
+            ftype = ord(data[index])
+        index += 1
+        size = struct.unpack(str('>H'), data[index:index+2])[0] - 2
+        index += 2
+    index += 1  # skip precision byte
+    return struct.unpack(str('>HH'), data[index:index+4])
+
+
 class ImageLibrary(local.Library):
 
     name = 'images'
@@ -27,15 +56,19 @@ class ImageLibrary(local.Library):
 
     libraries = []
 
+    _image_size_re = re.compile(r'.*-(\d+)x(\d+)\.(?:png|gif|jpeg)$')
+
     def __init__(self, config):
         ext_config = config[Extension.ext_name]
         libname = ext_config['library']
+
         try:
             lib = next(lib for lib in self.libraries if lib.name == libname)
             self.library = lib(config)
         except StopIteration:
             raise ExtensionError('Local library %s not found' % libname)
         logger.debug('Using %s as the local library', libname)
+
         try:
             self.media_dir = config['local']['media_dir']
         except KeyError:
@@ -45,7 +78,7 @@ class ImageLibrary(local.Library):
             self.image_dir = ext_config['image_dir']
         else:
             self.image_dir = Extension.get_or_create_data_dir(config)
-        self.patterns = map(str, ext_config['album_art_files'])
+        self.patterns = list(map(str, ext_config['album_art_files']))
         self.scanner = scan.Scanner(config['local']['scan_timeout'])
 
     def load(self):
@@ -58,7 +91,10 @@ class ImageLibrary(local.Library):
         return self.library.get_distinct(field, query)
 
     def get_images(self, uris):
-        return self.library.get_images(uris)
+        images = self.library.get_images(uris)
+        for uri in images:
+            images[uri] = list(map(self._normalize_image, images[uri]))
+        return images
 
     def lookup(self, uri):
         return self.library.lookup(uri)
@@ -119,23 +155,32 @@ class ImageLibrary(local.Library):
                     logger.info('Deleting file %s', path)
                     os.remove(path)
 
+    def _normalize_image(self, image):
+        if image.width or image.height:
+            return image
+        m = self._image_size_re.match(image.uri)
+        if m:
+            return image.copy(width=m.group(1), height=m.group(2))
+        else:
+            return image
+
     def _extract_images(self, uri, tags):
         path = uri_to_path(uri)
-        dirname = os.path.dirname(path)
         images = set()  # filter duplicate URIs, e.g. internal/external
-        for image in tags.get('image', tags.get('preview-image', [])):
+        for image in tags.get('image', []) + tags.get('preview-image', []):
             try:
-                # support both gst.Buffer and plain str/bytes type
+                # FIXME: gst.Buffer or plain str/bytes type?
                 data = getattr(image, 'data', image)
                 images.add(self._get_or_create_image_file(path, data))
             except Exception as e:
-                logger.warn('Error extracting images: %r', e)
+                logger.warn('Error extracting images for %r: %r', uri, e)
+        dirname = os.path.dirname(path)
         for pattern in self.patterns:
-            for imgpath in glob.glob(os.path.join(dirname, pattern)):
+            for path in glob.glob(os.path.join(dirname, pattern)):
                 try:
-                    images.add(self._get_or_create_image_file(imgpath))
+                    images.add(self._get_or_create_image_file(path))
                 except Exception as e:
-                    logger.warn('Cannot read image %s: %s', imgpath, e)
+                    logger.warn('Cannot read image file %r: %r', path, e)
         return images
 
     def _get_or_create_image_file(self, path, data=None):
@@ -144,7 +189,20 @@ class ImageLibrary(local.Library):
             raise ValueError('Unknown image type')
         if not data:
             data = open(path).read()
-        name = hashlib.md5(data).hexdigest() + '.' + what
+        digest, width, height = hashlib.md5(data).hexdigest(), None, None
+        try:
+            if what == 'png':
+                width, height = get_image_size_png(data)
+            elif what == 'gif':
+                width, height = get_image_size_gif(data)
+            elif what == 'jpeg':
+                width, height = get_image_size_jpeg(data)
+        except Exception as e:
+            logger.error('Error getting image size for %r: %r', path, e)
+        if width and height:
+            name = '%s-%dx%d.%s' % (digest, width, height, what)
+        else:
+            name = '%s.%s' % (digest, what)
         path = os.path.join(self.image_dir, name)
         get_or_create_file(str(path), True, data)
         return uritools.urijoin(self.base_uri, name)
@@ -152,4 +210,4 @@ class ImageLibrary(local.Library):
     def _scan(self, uri):
         logger.debug('Scanning %s for images', uri)
         data = self.scanner.scan(uri)
-        return data['tags']
+        return data.get('tags', {})

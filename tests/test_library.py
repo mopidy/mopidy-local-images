@@ -1,5 +1,6 @@
 from __future__ import unicode_literals
 
+import base64
 import hashlib
 import os
 import shutil
@@ -13,9 +14,29 @@ from mopidy.audio import scan
 from mopidy.models import Album, Track
 from mopidy_local_images import library
 
-GIF_DATA = """
-R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs='
-""".decode('base64')
+GIF_DATA = base64.b64decode(b"""
+R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=
+""")
+
+GIF_NAME = '%s-%dx%d.%s' % (hashlib.md5(GIF_DATA).hexdigest(), 1, 1, 'gif')
+
+PNG_DATA = base64.b64decode(b"""
+iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAAAAAA6fptVAAAACklEQVQYV2P4DwABAQEAWk1v8QAAA
+ABJRU5ErkJggg==
+""")
+
+PNG_NAME = '%s-%dx%d.%s' % (hashlib.md5(PNG_DATA).hexdigest(), 1, 1, 'png')
+
+JPEG_DATA = base64.b64decode(b"""
+/9j/4AAQSkZJRgABAQEAYABgAAD/4QAWRXhpZgAASUkqAAgAAAAAAAAAAAD/2wBDAAEBAQEBAQEB
+AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQH/
+2wBDAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEB
+AQEBAQEBAQEBAQH/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAr/xAAU
+EAEAAAAAAAAAAAAAAAAAAAAA/8QAFAEBAAAAAAAAAAAAAAAAAAAAAP/EABQRAQAAAAAAAAAAAAAA
+AAAAAAD/2gAMAwEAAhEDEQA/AL+AAf/Z
+""")
+
+JPEG_NAME = '%s-%dx%d.%s' % (hashlib.md5(JPEG_DATA).hexdigest(), 1, 1, 'jpeg')
 
 # setup mock local library
 mock_library = mock.MagicMock(local.Library)
@@ -97,16 +118,23 @@ class LocalLibraryProviderTest(unittest.TestCase):
 
     @mock.patch.object(scan.Scanner, 'scan')
     def test_scan(self, mock_scan):
+        mock_scan.return_value = {
+            'tags': {
+                'image': [GIF_DATA, PNG_DATA],
+                'preview-image': [JPEG_DATA]
+            }
+        }
+
         album = Album(name='foo')
         track = Track(uri=b'local:track:foo.mp3', album=album)
-        path = hashlib.md5(GIF_DATA).hexdigest() + '.gif'
-        image_track = track.copy(album=album.copy(images=['/images/' + path]))
-
-        mock_scan.return_value = {'tags': {'image': [GIF_DATA]}}
+        images = ['/images/' + name for name in GIF_NAME, PNG_NAME, JPEG_NAME]
+        image_track = track.copy(album=album.copy(images=images))
 
         self.library.add(track)
         mock_library.add.assert_called_with(image_track, None, None)
-        self.assertTrue(os.path.isfile(os.path.join(self.tempdir, path)))
+        self.assertTrue(os.path.isfile(os.path.join(self.tempdir, GIF_NAME)))
+        self.assertTrue(os.path.isfile(os.path.join(self.tempdir, PNG_NAME)))
+        self.assertTrue(os.path.isfile(os.path.join(self.tempdir, JPEG_NAME)))
 
         self.library.close()
-        self.assertFalse(os.path.isfile(os.path.join(self.tempdir, path)))
+        self.assertEqual(os.listdir(self.tempdir), [])
