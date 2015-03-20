@@ -45,7 +45,8 @@ def get_image_size_jpeg(data):
         size = struct.unpack(str('>H'), data[index:index+2])[0] - 2
         index += 2
     index += 1  # skip precision byte
-    return struct.unpack(str('>HH'), data[index:index+4])
+    height, width = struct.unpack(str('>HH'), data[index:index+4])
+    return width, height
 
 
 class ImageLibrary(local.Library):
