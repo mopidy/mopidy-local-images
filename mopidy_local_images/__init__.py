@@ -4,6 +4,7 @@ import logging
 import os
 
 from mopidy import config, ext
+from mopidy.exceptions import ExtensionError
 
 __version__ = '0.2.0'
 
@@ -30,19 +31,26 @@ class Extension(ext.Extension):
 
     def setup(self, registry):
         from .library import ImageLibrary
-        from .http import factory
-
         ImageLibrary.libraries = registry['local:library']
-
         registry.add('local:library', ImageLibrary)
-        registry.add('http:app', {'name': 'images', 'factory': factory})
+        registry.add('http:app', {'name': 'images', 'factory': self.factory})
+
+    def factory(self, config, core):
+        from .web import ImageHandler, IndexHandler
+        if config[self.ext_name]['image_dir']:
+            image_dir = config[self.ext_name]['image_dir']
+        else:
+            image_dir = self.get_or_create_data_dir(config)
+        return [
+            (r'/(index.html)?', IndexHandler, {'root': image_dir}),
+            (r'/(.+)', ImageHandler, {'path': image_dir})
+        ]
 
     @classmethod
     def get_or_create_data_dir(cls, config):
         try:
             data_dir = config['local']['data_dir']
         except KeyError:
-            from mopidy.exceptions import ExtensionError
             raise ExtensionError('Mopidy-Local not enabled')
         # FIXME: mopidy.utils.path is undocumented
         from mopidy.utils.path import get_or_create_dir
