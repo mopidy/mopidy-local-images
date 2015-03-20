@@ -1,3 +1,11 @@
+0.3.0 2015-03-20
+----------------
+
+- Extract image dimensions.
+
+- Support aggressive browser caching.
+
+
 0.2.0 2015-03-15
 ----------------
 
