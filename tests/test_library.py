@@ -65,6 +65,51 @@ class LocalLibraryProviderTest(unittest.TestCase):
     def tearDown(self):
         shutil.rmtree(self.tempdir)
 
+    def test_load(self):
+        self.library.load()
+        mock_library.load.assert_called_with()
+
+    def test_browse(self):
+        self.library.browse(b'local:directory')
+        mock_library.browse.assert_called_with(b'local:directory')
+
+    def test_lookup(self):
+        self.library.lookup(b'local:track:foo.mp3')
+        mock_library.lookup.assert_called_with(b'local:track:foo.mp3')
+
+    def test_search(self):
+        self.library.search({})
+        mock_library.search.assert_called_with({}, 100, 0, None, False)
+
+    @unittest.skipUnless(hasattr(mock_library, 'get_distinct'), 'Mopidy v1.0')
+    def test_get_distinct(self):
+        self.library.get_distinct('album')
+        mock_library.get_distinct.assert_called_with('album', None)
+
+    @unittest.skipUnless(hasattr(mock_library, 'get_images'), 'Mopidy v1.0')
+    def test_get_images(self):
+        self.library.get_images([b'local:track:foo.mp3'])
+        mock_library.get_images.assert_called_with([b'local:track:foo.mp3'])
+
+    @unittest.skipUnless(hasattr(mock_library, 'get_images'), 'Mopidy v1.0')
+    @mock.patch.object(mock_library, 'get_images')
+    def test_get_images_size(self, mock_get_images):
+        from mopidy.models import Image
+        mock_get_images.return_value = {
+            b'local:track:foo.mp3': [Image(uri='/images/foo-640x480.jpeg')],
+            b'local:track:bar.mp3': [Image(uri='bar.png', width=10, height=20)]
+        }
+
+        images = self.library.get_images([b'local:track:foo.mp3'])
+        self.assertEqual(640, images[b'local:track:foo.mp3'][0].width)
+        self.assertEqual(480, images[b'local:track:foo.mp3'][0].height)
+        self.assertEqual(10, images[b'local:track:bar.mp3'][0].width)
+        self.assertEqual(20, images[b'local:track:bar.mp3'][0].height)
+
+    def test_begin(self):
+        self.library.begin()
+        mock_library.begin.assert_called_with()
+
     def test_add(self):
         track = Track(name='Foo', uri=b'local:track:foo.mp3')
 
@@ -89,32 +134,13 @@ class LocalLibraryProviderTest(unittest.TestCase):
         self.library.add(track, {'tag': 'bar'}, 0)
         mock_library.add.assert_called_with(track, {'tag': 'bar'}, 0)
 
-    def test_load(self):
-        self.library.load()
-        mock_library.load.assert_called_with()
+    def test_remove(self):
+        self.library.remove(b'local:track:foo.mp3')
+        mock_library.remove.assert_called_with(b'local:track:foo.mp3')
 
-    def test_browse(self):
-        self.library.browse(b'local:directory')
-        mock_library.browse.assert_called_with(b'local:directory')
-
-    @unittest.skipUnless(hasattr(mock_library, 'get_distinct'), 'Mopidy v0.20')
-    def test_get_distinct(self):
-        self.library.get_distinct('album')
-        mock_library.get_distinct.assert_called_with('album', None)
-
-    @unittest.skipUnless(hasattr(mock_library, 'get_images'), 'Mopidy v0.20')
-    def test_get_images(self):
-        self.library.get_images([b'local:track:foo.mp3'])
-        mock_library.get_images.assert_called_with([b'local:track:foo.mp3'])
-        pass
-
-    def test_lookup(self):
-        self.library.lookup(b'local:track:foo.mp3')
-        mock_library.lookup.assert_called_with(b'local:track:foo.mp3')
-
-    def test_search(self):
-        self.library.search({})
-        mock_library.search.assert_called_with({}, 100, 0, None, False)
+    def test_clear(self):
+        self.library.clear()
+        mock_library.clear.assert_called_with()
 
     @mock.patch.object(scan.Scanner, 'scan')
     def test_scan(self, mock_scan):

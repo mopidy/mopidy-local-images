@@ -160,7 +160,7 @@ class ImageLibrary(local.Library):
             return image
         m = self._image_size_re.match(image.uri)
         if m:
-            return image.copy(width=m.group(1), height=m.group(2))
+            return image.copy(width=int(m.group(1)), height=int(m.group(2)))
         else:
             return image
 
