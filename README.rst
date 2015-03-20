@@ -1,15 +1,15 @@
 Mopidy-Local-Images
 ========================================================================
 
-Mopidy-Local-Images is a Mopidy_ local library extension that allows
-Web clients access to album art embedded in local media files.  It
-does so by acting as a *proxy* between Mopidy's ``local scan`` command
-and the actual local library provider being used.  Images are
+Mopidy-Local-Images is a Mopidy_ local library and Web extension that
+allows Web clients access to album art embedded in local media files.
+It does so by acting as a *proxy* between Mopidy's ``local scan``
+command and the actual local library provider being used.  Images are
 extracted from media files and stored as individual image files while
 scanning, and corresponding image URIs are inserted into Mopidy data
-models.  Clients can then access these images through an included
-Mopidy Web extension.  All other requests are delegated to the actual
-local library provider as-is.
+models.  Clients can then access these images through the Web
+extension.  All other requests are delegated to the actual local
+library provider as-is.
 
 Album art stored in separate files is also supported.  External image
 files will be considered if they reside in the same directory as the
