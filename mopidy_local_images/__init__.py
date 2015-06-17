@@ -6,7 +6,7 @@ import os
 from mopidy import config, ext
 from mopidy.exceptions import ExtensionError
 
-__version__ = '1.0.0'
+__version__ = '0.3.1'
 
 logger = logging.getLogger(__name__)
 
@@ -40,9 +40,11 @@ class Extension(ext.Extension):
             data_dir = config['local']['data_dir']
         except KeyError:
             raise ExtensionError('Mopidy-Local not enabled')
-        # FIXME: mopidy.utils.path is undocumented
-        from mopidy.utils.path import get_or_create_dir
-        return get_or_create_dir(os.path.join(data_dir, b'images'))
+        path = os.path.join(data_dir, b'images')
+        if not os.path.isdir(path):
+            logger.info('Creating directory %s', path)
+            os.makedirs(path, 0o755)
+        return path
 
     def webapp(self, config, core):
         from .web import ImageHandler, IndexHandler

@@ -12,12 +12,22 @@ import struct
 from mopidy import local
 from mopidy.audio import scan
 from mopidy.exceptions import ExtensionError
-from mopidy.local.translator import local_track_uri_to_file_uri
-from mopidy.utils.path import get_or_create_file, uri_to_path
 
 import uritools
 
 from . import Extension
+
+# changed in Mopidy v1.1
+try:
+    from mopidy.local.translator import local_uri_to_file_uri
+except ImportError:
+    from mopidy.local.translator import local_track_uri_to_file_uri \
+        as local_uri_to_file_uri
+try:
+    from mopidy.local.translator import local_uri_to_path
+except ImportError:
+    from mopidy.local.translator import local_track_uri_to_path \
+        as local_uri_to_path
 
 logger = logging.getLogger(__name__)
 
@@ -108,10 +118,13 @@ class ImageLibrary(local.Library):
         return self.library.begin()
 
     def add(self, track, tags=None, duration=None):
-        if track.album and track.album.name:  # require existing album
+        if track.album and track.album.name:  # FIXME: album required
+            uri = local_uri_to_file_uri(track.uri, self.media_dir)
             try:
-                uri = local_track_uri_to_file_uri(track.uri, self.media_dir)
-                images = self._extract_images(uri, tags or self._scan(uri))
+                if tags is None:
+                    images = self._extract_images(track.uri, self._scan(uri))
+                else:
+                    images = self._extract_images(track.uri, tags)
                 album = track.album.copy(images=images)
                 track = track.copy(album=album)
             except Exception as e:
@@ -167,16 +180,15 @@ class ImageLibrary(local.Library):
             return image
 
     def _extract_images(self, uri, tags):
-        path = uri_to_path(uri)
-        images = set()  # filter duplicate URIs, e.g. internal/external
+        images = set()  # filter duplicate images, e.g. embedded/external
         for image in tags.get('image', []) + tags.get('preview-image', []):
             try:
                 # FIXME: gst.Buffer or plain str/bytes type?
                 data = getattr(image, 'data', image)
-                images.add(self._get_or_create_image_file(path, data))
+                images.add(self._get_or_create_image_file(None, data))
             except Exception as e:
                 logger.warn('Error extracting images for %r: %r', uri, e)
-        dirname = os.path.dirname(path)
+        dirname = os.path.dirname(local_uri_to_path(uri, self.media_dir))
         for pattern in self.patterns:
             for path in glob.glob(os.path.join(dirname, pattern)):
                 try:
@@ -205,8 +217,11 @@ class ImageLibrary(local.Library):
             name = '%s-%dx%d.%s' % (digest, width, height, what)
         else:
             name = '%s.%s' % (digest, what)
-        path = os.path.join(self.image_dir, name)
-        get_or_create_file(str(path), True, data)
+        dest = os.path.join(self.image_dir, name)
+        if not os.path.isfile(dest):
+            logger.info('Creating file %s', dest)
+            with open(dest, 'wb') as fh:
+                fh.write(data)
         return uritools.urijoin(self.base_uri, name)
 
     def _scan(self, uri):

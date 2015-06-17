@@ -25,7 +25,7 @@ setup(
     include_package_data=True,
     install_requires=[
         'setuptools',
-        'Mopidy >= 1.0',
+        'Mopidy >= 0.19',
         'Pykka >= 1.1',
         'uritools >= 1.0'
     ],
