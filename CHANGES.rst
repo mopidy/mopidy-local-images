@@ -1,3 +1,11 @@
+0.3.2 2015-06-17
+----------------
+
+- Update ``local.translator`` imports for Mopidy v1.1.
+
+- Update build/test environment.
+
+
 0.3.1 2015-03-20
 ----------------
 
