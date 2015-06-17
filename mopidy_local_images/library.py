@@ -8,13 +8,14 @@ import os
 import os.path
 import re
 import struct
-import uritools
 
 from mopidy import local
 from mopidy.audio import scan
 from mopidy.exceptions import ExtensionError
 from mopidy.local.translator import local_track_uri_to_file_uri
 from mopidy.utils.path import get_or_create_file, uri_to_path
+
+import uritools
 
 from . import Extension
 

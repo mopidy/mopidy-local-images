@@ -12,6 +12,7 @@ import mock
 from mopidy import local
 from mopidy.audio import scan
 from mopidy.models import Album, Track
+
 from mopidy_local_images import library
 
 GIF_DATA = base64.b64decode(b"""

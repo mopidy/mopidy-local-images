@@ -1,9 +1,11 @@
-include AUTHORS
+include .coveragerc
+include .travis.yml
 include CHANGES.rst
 include LICENSE
 include MANIFEST.in
 include README.rst
 include mopidy_local_images/ext.conf
+include tox.ini
 
 recursive-include mopidy_local_images/www *.html
 recursive-include tests *.py

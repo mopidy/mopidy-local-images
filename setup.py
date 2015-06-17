@@ -1,13 +1,14 @@
 from __future__ import unicode_literals
 
-from setuptools import setup, find_packages
+import re
+
+from setuptools import find_packages, setup
 
 
 def get_version(filename):
-    import re
-    content = open(filename).read()
-    metadata = dict(re.findall("__([a-z]+)__ = '([^']+)'", content))
-    return metadata['version']
+    with open(filename) as fh:
+        metadata = dict(re.findall("__([a-z]+)__ = '([^']+)'", fh.read()))
+        return metadata['version']
 
 
 setup(
@@ -17,20 +18,16 @@ setup(
     license='Apache License, Version 2.0',
     author='Thomas Kemmer',
     author_email='tkemmer@computer.org',
-    description='Mopidy local library proxy extension for handling embedded album art',
+    description='Mopidy local library proxy extension for handling embedded album art',  # noqa
     long_description=open('README.rst').read(),
     packages=find_packages(exclude=['tests', 'tests.*']),
     zip_safe=False,
     include_package_data=True,
     install_requires=[
         'setuptools',
-        'Mopidy >= 0.19',
-        'uritools >= 0.10'
-    ],
-    test_suite='nose.collector',
-    tests_require=[
-        'nose',
-        'mock >= 1.0',
+        'Mopidy >= 1.0',
+        'Pykka >= 1.1',
+        'uritools >= 1.0'
     ],
     entry_points={
         'mopidy.ext': [
