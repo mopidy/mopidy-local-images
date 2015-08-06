@@ -14,7 +14,7 @@ def get_version(filename):
 setup(
     name='Mopidy-Local-Images',
     version=get_version('mopidy_local_images/__init__.py'),
-    url='https://github.com/tkem/mopidy-local-images',
+    url='https://github.com/mopidy/mopidy-local-images',
     license='Apache License, Version 2.0',
     author='Thomas Kemmer',
     author_email='tkemmer@computer.org',

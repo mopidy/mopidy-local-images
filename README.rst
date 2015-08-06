@@ -86,12 +86,12 @@ Project Resources
     :target: https://pypi.python.org/pypi/Mopidy-Local-Images/
     :alt: Number of PyPI downloads
 
-.. image:: http://img.shields.io/travis/tkem/mopidy-local-images/master.svg?style=flat
-    :target: https://travis-ci.org/tkem/mopidy-local-images/
+.. image:: http://img.shields.io/travis/mopidy/mopidy-local-images/master.svg?style=flat
+    :target: https://travis-ci.org/mopidy/mopidy-local-images/
     :alt: Travis CI build status
 
-.. image:: http://img.shields.io/coveralls/tkem/mopidy-local-images/master.svg?style=flat
-   :target: https://coveralls.io/r/tkem/mopidy-local-images/
+.. image:: http://img.shields.io/coveralls/mopidy/mopidy-local-images/master.svg?style=flat
+   :target: https://coveralls.io/r/mopidy/mopidy-local-images/
    :alt: Test coverage
 
 - `Issue Tracker`_
@@ -102,7 +102,7 @@ Project Resources
 License
 ------------------------------------------------------------------------
 
-Copyright (c) 2014, 2015 Thomas Kemmer.
+Copyright (c) 2014, 2015 Thomas Kemmer and contributors_.
 
 Licensed under the `Apache License, Version 2.0`_.
 
@@ -120,8 +120,9 @@ This should no longer be a problem in Mopidy v1.0 and later versions.
 
 .. _pip: https://pip.pypa.io/en/latest/
 
-.. _Issue Tracker: https://github.com/tkem/mopidy-local-images/issues/
-.. _Source Code: https://github.com/tkem/mopidy-local-images/
-.. _Change Log: https://github.com/tkem/mopidy-local-images/blob/master/CHANGES.rst
+.. _Issue Tracker: https://github.com/mopidy/mopidy-local-images/issues/
+.. _Source Code: https://github.com/mopidy/mopidy-local-images/
+.. _Change Log: https://github.com/mopidy/mopidy-local-images/blob/master/CHANGES.rst
 
+.. _contributors: https://github.com/mopidy/mopidy-local-images/blob/master/AUTHORS
 .. _Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
