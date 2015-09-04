@@ -1,3 +1,11 @@
+1.0.0 UNRELEASED
+----------------
+
+- Require Mopidy v1.1 or later.
+
+- Use ``Extension.get_data_dir()`` as default image directory.
+
+
 0.3.3 2015-06-17
 ----------------
 
