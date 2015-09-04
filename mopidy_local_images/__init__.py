@@ -4,7 +4,6 @@ import logging
 import os
 
 from mopidy import config, ext
-from mopidy.exceptions import ExtensionError
 
 __version__ = '0.3.3'
 
@@ -34,25 +33,34 @@ class Extension(ext.Extension):
         registry.add('local:library', ImageLibrary)
         registry.add('http:app', {'name': 'images', 'factory': self.webapp})
 
-    @classmethod
-    def get_or_create_data_dir(cls, config):
-        try:
-            data_dir = config['local']['data_dir']
-        except KeyError:
-            raise ExtensionError('Mopidy-Local not enabled')
-        path = os.path.join(data_dir, b'images')
-        if not os.path.isdir(path):
-            logger.info('Creating directory %s', path)
-            os.makedirs(path, 0o755)
-        return path
-
     def webapp(self, config, core):
         from .web import ImageHandler, IndexHandler
         if config[self.ext_name]['image_dir']:
             image_dir = config[self.ext_name]['image_dir']
         else:
-            image_dir = self.get_or_create_data_dir(config)
+            image_dir = self.get_data_dir(config)
         return [
             (r'/(index.html)?', IndexHandler, {'root': image_dir}),
             (r'/(.+)', ImageHandler, {'path': image_dir})
         ]
+
+    @classmethod
+    def get_or_create_data_dir(cls, config):
+        data_dir = cls().get_data_dir(config)
+        migrate_old_data_dir(config, data_dir)
+        return data_dir
+
+
+def migrate_old_data_dir(config, new_dir):
+    # Remove this method when we're confident most users have upgraded away
+    # from Mopidy 1.0.
+    old_dir = os.path.join(config['core']['data_dir'], b'local', b'images')
+    if not os.path.isdir(old_dir):
+        return
+    logger.info('Migrating Mopidy-Local-Images to new data dir')
+    for filename in os.listdir(old_dir):
+        old_path = os.path.join(old_dir, filename)
+        new_path = os.path.join(new_dir, filename)
+        logger.info('Moving %r to %r', old_path, new_path)
+        os.rename(old_path, new_path)
+    os.rmdir(old_dir)
