@@ -67,7 +67,7 @@ beware that these are subject to change for now::
   base_uri = /images/
 
   # the directory where local image files are stored; if not set,
-  # defaults to <local/data_dir>/images
+  # creates its own subdirectory in <core/data_dir>
   image_dir =
 
   # a list of file names to check for when searching for external album
