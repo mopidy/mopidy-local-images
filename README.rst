@@ -82,10 +82,6 @@ Project Resources
     :target: https://pypi.python.org/pypi/Mopidy-Local-Images/
     :alt: Latest PyPI version
 
-.. image:: http://img.shields.io/pypi/dm/Mopidy-Local-Images.svg?style=flat
-    :target: https://pypi.python.org/pypi/Mopidy-Local-Images/
-    :alt: Number of PyPI downloads
-
 .. image:: http://img.shields.io/travis/mopidy/mopidy-local-images/develop.svg?style=flat
     :target: https://travis-ci.org/mopidy/mopidy-local-images/
     :alt: Travis CI build status
